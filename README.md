@@ -1,4 +1,4 @@
-# Micron laser level
+# Betzuka laser level
 
 Java app to use a USB webcam to accurately detect the height of a laser line to a few microns (depending on how the webcam sensor is fixed and its pixel pitch). Works best if the camera is used without optics and the laser line is formed with a cylindrical lens 
 so that it has a gaussian distribution of brightness. This app will locate the centre of the beam as the centre of the gaussian.
