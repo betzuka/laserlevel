@@ -9,7 +9,7 @@ To be used with levelling machines. The sensor should be orientated at 90 degree
 
 This is a very early work in progress, screenshot is working off a standard Dewalt DW088 builder's levelling laser. The webcam is the sensor board from a £7 vga camera that has been rehoused in a machined block.
 
-The screenshot is of the sensor block zero'd (blue line) then lifted by a piece of copy paper, showing a reading of ~29 pixels at the gaussian centre (red line). The paper is ~80 microns thick so it is resolving to ~3 microns or 1 ten-thousandth of an inch if you are that way inclined, pretty good for £7.
+The screenshot is of the sensor block zero'd (blue line) then raised by placing it on a piece of copy paper, showing a reading of ~29 pixels at the gaussian centre (red line). The paper is ~80 microns thick so it is resolving to ~3 microns or 1 ten-thousandth of an inch if you are that way inclined, pretty good for £7.
 
 ![Screenshot](/doc/imgs/screen_shot_1.png?raw=true)
 ![Sensor](/doc/imgs/sensor_block_1.jpg?raw=true)
