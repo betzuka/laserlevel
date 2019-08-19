@@ -1,6 +1,6 @@
 # Betzuka laser level
 
-Java app to use a USB webcam to accurately detect the height of a laser line to a few microns (depending on how the webcam sensor is fixed and its pixel pitch). Works best if the camera is used without optics and the laser line is formed with a cylindrical lens 
+Java app to use a USB webcam to accurately detect the location of a laser line to a few microns (depending on how the webcam sensor is fixed and its pixel pitch). Works best if the camera is used without optics and the laser line is formed with a cylindrical lens 
 so that it has a gaussian distribution of brightness. It wont work as well with the ultra cheap £3 laser line generators that use a diffraction pattern rather than a glass lens to create the line. This app will locate the centre of the beam as the centre of the gaussian shaped intensity profile when reading intensity orthogonal to the laser line.
 
 To be used with levelling machines. The sensor should be orientated at 90 degrees if reading a horizontal laser line, or vica-versa if reading a vertical laser line.
