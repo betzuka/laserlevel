@@ -5,6 +5,8 @@ so that it has a gaussian distribution of brightness. This app will locate the c
 
 To be used with levelling machines.
 
+This is a very early work in progress.
+
 ## Dependencies
 Project depends on Apache Math 3.6.2 for fitting gaussians and OpenCV for interfacing to the webcam.
 
