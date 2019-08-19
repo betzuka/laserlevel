@@ -3,7 +3,7 @@
 Java app to use a USB webcam to resolve the location of a laser line to a few microns (depending on how the webcam sensor is fixed and its pixel pitch). Works best if the camera is used without optics and the laser line is formed with a cylindrical lens 
 so that it has a gaussian distribution of brightness. It wont work as well with the ultra cheap £3 laser line generators that use a diffraction pattern rather than a glass lens to create the line. This app will locate the centre of the beam as the centre of the gaussian shaped intensity profile when reading intensity orthogonal to the laser line.
 
-To be used with levelling machines, bringing multiple objects (e.g. linear rails) into plane, making things extremely straight, etc. The sensor should be orientated at 90 degrees if reading a horizontal laser line, or vica-versa if reading a vertical laser line.
+Goal is to use it for levelling machines, bringing multiple objects (e.g. linear rails) into plane, making things extremely straight, etc. The sensor should be orientated at 90 degrees if reading a horizontal laser line, or vica-versa if reading a vertical laser line.
 
 ![Sensor orientation](/doc/imgs/sensor_orientation.jpg?raw=true)
 
