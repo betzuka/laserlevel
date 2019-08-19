@@ -3,7 +3,9 @@
 Java app to use a USB webcam to accurately detect the height of a laser line to a few microns (depending on how the webcam sensor is fixed and its pixel pitch). Works best if the camera is used without optics and the laser line is formed with a cylindrical lens 
 so that it has a gaussian distribution of brightness. This app will locate the centre of the beam as the centre of the gaussian.
 
-To be used with levelling machines.
+To be used with levelling machines. The sensor should be orientated at 90 degrees if reading a horizontal laser line, or vica-versa if reading a vertical laser line.
+
+![Sensor orientation](/doc/imgs/sensor_orientation.jpg?raw=true)
 
 This is a very early work in progress, screenshot is working off a standard Dewalt DW088 builder's levelling laser. The webcam is the sensor board from a £7 vga camera that has been rehoused in a machined block.
 
