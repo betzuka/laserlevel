@@ -5,7 +5,10 @@ so that it has a gaussian distribution of brightness. This app will locate the c
 
 To be used with levelling machines.
 
-This is a very early work in progress.
+This is a very early work in progress, screenshot is working off a standard Dewalt DW088 builder's levelling laser. The webcam is the sensor board from a £7 vga camera that has been rehoused in a machined block.
+
+![Screenshot](/doc/imgs/screen_shot_1.png?raw=true)
+![Sensor](/doc/imgs/sensor_block_1.jpg?raw=true)
 
 ## Dependencies
 Project depends on Apache Math 3.6.2 for fitting gaussians and OpenCV for interfacing to the webcam.
