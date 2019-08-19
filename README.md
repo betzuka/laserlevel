@@ -18,7 +18,7 @@ Clone this repository then build with maven.
 
 `mvn package`
 
-You may have to run this twice. Note that it will download the collosal OpenCV package then repackage everyting in a single jar which will be about 100Mb.
+You may have to run this twice. Note that it will download the colossal OpenCV package then repackage everyting in a single jar which will be about 100Mb. I will endeavour to remove the OpenCV dependency as it is only used to read the webcam.
 
 ## Running
 
