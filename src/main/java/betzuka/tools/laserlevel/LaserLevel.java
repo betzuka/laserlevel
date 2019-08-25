@@ -7,30 +7,28 @@ import java.awt.FlowLayout;
 import java.awt.Graphics;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
 
 import javax.swing.JButton;
+import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 
-import org.opencv.core.Core;
-import org.opencv.videoio.VideoCapture;
+import betzuka.tools.laserlevel.camera.SaxosCamera;
+
 
 public class LaserLevel extends JFrame {
 
-
-	static{
-		nu.pattern.OpenCV.loadShared();
-        System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
-    }
-
-	private VideoCapture cam;
+	
 	private FrameAnalyzer analyser;
 	private AnalyzedFrame frame;
 	private Measurement measurement;
-
+	private Settings settings = new Settings();
+	private JDialog settingsDialog;
+	
 	private static class Measurement {
 		private Double zero;
 
@@ -44,10 +42,13 @@ public class LaserLevel extends JFrame {
 
 	}
 
+	public double pixelToUM(double pixel) {
+		return pixel * settings.getUmPerPixel();
+	}
+	
 	public LaserLevel() {
-		cam = new VideoCapture();
-		cam.open(0);
-		analyser = new FrameAnalyzer(cam);
+		
+		analyser = new FrameAnalyzer(new SaxosCamera(settings), settings);
 		measurement = new Measurement();
 
 		setLayout(new BorderLayout());
@@ -60,15 +61,23 @@ public class LaserLevel extends JFrame {
 		content.add(vidPanel);
 		content.add(curvePanel);
 		add(content, BorderLayout.CENTER);
+	
 		add(new MeasurementPanel(), BorderLayout.SOUTH);
 
-		addWindowListener(new WindowAdapter() {
-			@Override
-			public void windowClosing(WindowEvent e) {
-				super.windowClosing(e);
-				cam.release();
-			}
+		settingsDialog = new BeanDialog(this, "Preferences", settings);
+		
+		JMenuBar menuBar = new JMenuBar();
+		JMenu menu = new JMenu("Options");
+		
+		JMenuItem item = new JMenuItem("Preferences");
+		item.addActionListener((e) -> {
+			settingsDialog.setVisible(true);
 		});
+		
+		menu.add(item);
+		menuBar.add(menu);
+		this.setJMenuBar(menuBar);
+		
 	}
 
 
@@ -101,7 +110,7 @@ public class LaserLevel extends JFrame {
 	    public void paintComponent(Graphics g) {
 			super.paintComponent(g);
 			if (frame!=null && frame.hasFit() && measurement.getZero()!=null) {
-				error.setText(String.format("%.4f", (frame.getMaxima()-measurement.getZero())));
+				error.setText(String.format("%.4f", pixelToUM(frame.getMaxima()-measurement.getZero())));
 			} else {
 				error.setText("");
 			}

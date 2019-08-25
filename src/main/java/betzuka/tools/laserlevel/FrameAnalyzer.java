@@ -5,21 +5,20 @@ import java.awt.image.DataBufferByte;
 
 import org.apache.commons.math3.fitting.GaussianCurveFitter;
 import org.apache.commons.math3.fitting.WeightedObservedPoints;
-import org.opencv.core.Core;
-import org.opencv.core.Mat;
-import org.opencv.imgproc.Imgproc;
-import org.opencv.videoio.VideoCapture;
 
 public class FrameAnalyzer {
-	private VideoCapture cam;
-	private Mat mat;
+	private Camera cam;
+//	private Mat mat;
 	private int width, height;
-	public FrameAnalyzer(VideoCapture cam) {
+	private final Settings settings;
+	public FrameAnalyzer(Camera cam, Settings settings) {
 		this.cam = cam;
-		this.mat = new Mat();
+		this.settings = settings;
+	//	this.mat = new Mat();
 		AnalyzedFrame firstFrame = analyzeNextFrame();
 		this.width = firstFrame.getWidth();
 		this.height = firstFrame.getHeight();
+		
 	}
 	
 	public int getWidth() {
@@ -32,36 +31,26 @@ public class FrameAnalyzer {
 
 	public AnalyzedFrame analyzeNextFrame() {
 		//read frame from camera
-		cam.read(mat);
-		//convert to greyscale
-		Imgproc.cvtColor(mat, mat, Imgproc.COLOR_BGR2GRAY);
-		//rotate the image since we want the to measure in the 'long' direction
-		Core.rotate(mat, mat, Core.ROTATE_90_CLOCKWISE);
+		BufferedImage img = cam.nextFrame();
 		
-		//get the pixels
-		byte [] pixels = new byte[mat.rows() * mat.cols()];
-		mat.get(0, 0, pixels);
-		
-		double [] intensityCurve = calcCurve(mat.rows(), mat.cols(), pixels);
+		byte [] pixels = ((DataBufferByte) img.getRaster().getDataBuffer()).getData();
+		double [] intensityCurve = calcCurve(img.getHeight(), img.getWidth() , pixels, settings.getSmoothingFactor(), settings.isInvertGreyscale());
 		
 		double [] gaussianFit = fitGausian(intensityCurve);
 		
-		//create an image of the camera frame for display purposes
-		BufferedImage img = new BufferedImage(mat.cols(),mat.rows(), BufferedImage.TYPE_BYTE_GRAY);
-		System.arraycopy(pixels, 0, ((DataBufferByte) img.getRaster().getDataBuffer()).getData(), 0, pixels.length);
-		
-		return new AnalyzedFrame(mat.cols(), mat.rows(), intensityCurve, gaussianFit, img);
+		return new AnalyzedFrame(img.getWidth(), img.getHeight(), intensityCurve, gaussianFit, img);
 	}
 			
-	private static double [] calcCurve(int rows, int cols, byte [] pixels) {
+
+	private static double [] calcCurve(int rows, int cols, byte [] pixels, int smoothingFactor, boolean invert) {
 		
 		int [] rowIntensity = new int[rows];
 		for (int i=0;i<cols;i++) {
 			for (int j=0;j<rows;j++) {
-				rowIntensity[j] += pixels[j*cols + i] & 0xFF;
+				rowIntensity[j] += (invert ? pixels[j*cols + i]^0xFF : pixels[j*cols + i]) & 0xFF;
 			}
 		}
-				
+			
 		int max = 0;
 		int min = Integer.MAX_VALUE;
 		for (int i=0;i<rows;i++) {
@@ -82,8 +71,13 @@ public class FrameAnalyzer {
 		double [] smooth = new double[curve.length];
 		
 		//smooth with nearest neighbour
-		for (int i=1;i<curve.length-1;i++) {
-			smooth[i] = (curve[i-1] + curve[i] + curve[i+1]) / 3d;
+		for (int i=smoothingFactor;i<curve.length-smoothingFactor;i++) {
+			
+			for (int j=-smoothingFactor;j<=smoothingFactor;j++) {
+				smooth[i] += curve[i+j];
+			}
+			
+			smooth[i] /= (double)(2*smoothingFactor + 1);
 		}
 		
 		return smooth;

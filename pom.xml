@@ -14,11 +14,22 @@
 	</properties>
 
 	<dependencies>
-		<dependency>
+		<!-- dependency>
 		      <groupId>org.openpnp</groupId>
 		      <artifactId>opencv</artifactId>
 		      <version>3.4.2-1</version>
-    		</dependency>
+    		</dependency-->
+    		<dependency>
+  <groupId>org.apache.commons</groupId>
+  <artifactId>commons-lang3</artifactId>
+  <version>3.9</version>
+</dependency>
+    		<dependency>
+  <groupId>com.github.sarxos</groupId>
+  <artifactId>webcam-capture</artifactId>
+  <version>0.3.12</version>
+</dependency>
+
 		<dependency>
 		    <groupId>org.apache.commons</groupId>
 		    <artifactId>commons-math3</artifactId>
