@@ -20,14 +20,12 @@ Project depends on Apache Math 3.6.2 for fitting gaussians and Saxos for interfa
 ## Pre-built binary
 [Download and extract this zip file](/builds/laser.zip?raw=true) then run `laser.bat`. You will need java installed.
 
-## Build
+## Build from source then running 
 Clone this repository then build with maven.
 
 `mvn package`
 
-## Running
-
-First connect your webcam. Then find the jar file just built (it will be in the `target` directory). Run:
+Find the jar file just built (it will be in the `target` directory). Run:
 
 `java -jar laserlevel-1.0-SNAPSHOT-shaded.jar betzuka.tools.laserlevel.LaserLevel`
 
