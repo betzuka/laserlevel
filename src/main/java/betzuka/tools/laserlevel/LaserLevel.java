@@ -202,17 +202,32 @@ public class LaserLevel extends JFrame implements FrameListener {
 			measurementsTable.setShowGrid(true);
 			measurementsTable.setRowSelectionAllowed(false);
 			JScrollPane tablePane = new JScrollPane(measurementsTable); 
-			
+			JLabel progress = new JLabel(" ");
 			JButton zeroButton = new JButton("Zero");
 			zeroButton.addActionListener(new ActionListener() {
 				@Override
 				public void actionPerformed(ActionEvent e) {
 					if (frame!=null) {
 						//make sure we really want to do this
-						if (measurements.isEmpty() ||  JOptionPane.YES_OPTION==JOptionPane.showConfirmDialog(LaserLevel.this, "Re-zero ? Are you sure, all measurements will be lost!", "Warning", JOptionPane.OK_CANCEL_OPTION)) { 
-							measurement.setZero(frame.getMaxima());
-							measurements.clear();
-							model.fireTableDataChanged();
+						if (measurements.isEmpty() ||  JOptionPane.YES_OPTION==JOptionPane.showConfirmDialog(LaserLevel.this, "Re-zero ? Are you sure, all measurements will be lost!", "Warning", JOptionPane.OK_CANCEL_OPTION)) {
+							zeroButton.setEnabled(false);
+							analyser.addListener(new SampleAverager(settings.getSamplesToAverage(), new SampleAverager.Tracker() {
+								@Override
+								public void onUpdate(int samplesTaken) {
+									progress.setText(samplesTaken + "/" + settings.getSamplesToAverage());
+									progress.repaint();
+								}
+								
+								@Override
+								public void onComplete(double avg) {
+									measurement.setZero(avg);
+									measurements.clear();
+									progress.setText("");
+									zeroButton.setEnabled(true);
+									model.fireTableDataChanged();
+									
+								}
+							}));
 						}
 						
 					} else {
@@ -223,7 +238,7 @@ public class LaserLevel extends JFrame implements FrameListener {
 			
 			
 			JButton measure = new JButton("Measure");
-			JLabel progress = new JLabel(" ");
+			
 			progress.setPreferredSize(new Dimension(50, (int)progress.getPreferredSize().getHeight()));
 			measure.addActionListener(new ActionListener() {
 				@Override
