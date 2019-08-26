@@ -21,6 +21,10 @@ public class FrameAnalyzer {
 		
 	}
 	
+	public void dispose() {
+		cam.dispose();
+	}
+	
 	public int getWidth() {
 		return width;
 	}

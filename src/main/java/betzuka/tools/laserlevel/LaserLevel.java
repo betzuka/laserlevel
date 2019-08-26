@@ -15,7 +15,10 @@ import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.UIManager;
+import javax.swing.UIManager.LookAndFeelInfo;
 
 import betzuka.tools.laserlevel.camera.SaxosCamera;
 
@@ -28,6 +31,8 @@ public class LaserLevel extends JFrame {
 	private Measurement measurement;
 	private Settings settings = new Settings();
 	private JDialog settingsDialog;
+	private boolean initialized = false;
+	private Object initMutex = new Object();
 	
 	private static class Measurement {
 		private Double zero;
@@ -46,44 +51,83 @@ public class LaserLevel extends JFrame {
 		return pixel * settings.getUmPerPixel();
 	}
 	
-	public LaserLevel() {
-		
-		analyser = new FrameAnalyzer(new SaxosCamera(settings), settings);
-		measurement = new Measurement();
-
-		setLayout(new BorderLayout());
-		Dimension dim = new Dimension(analyser.getWidth(), analyser.getHeight());
-		JPanel content = new JPanel(new FlowLayout());
-		JPanel curvePanel = new CurvePanel();
-		curvePanel.setPreferredSize(dim);
-		JPanel vidPanel = new VidPanel();
-		vidPanel.setPreferredSize(dim);
-		content.add(vidPanel);
-		content.add(curvePanel);
-		add(content, BorderLayout.CENTER);
+	public void init(String camName) {
+		synchronized(initMutex) {
+			initialized = false;
+			getContentPane().removeAll();
+			if (analyser!=null) {
+				analyser.dispose();
+			}
+			analyser = new FrameAnalyzer(new SaxosCamera(camName, settings), settings);
+			measurement = new Measurement();
 	
-		add(new MeasurementPanel(), BorderLayout.SOUTH);
-
+			setLayout(new BorderLayout());
+			Dimension dim = new Dimension(analyser.getWidth(), analyser.getHeight());
+			JPanel content = new JPanel(new FlowLayout());
+			JPanel curvePanel = new CurvePanel();
+			curvePanel.setPreferredSize(dim);
+			JPanel vidPanel = new VidPanel();
+			vidPanel.setPreferredSize(dim);
+			content.add(vidPanel);
+			content.add(curvePanel);
+			add(content, BorderLayout.CENTER);
+		
+			add(new MeasurementPanel(), BorderLayout.SOUTH);
+			this.revalidate();
+			
+			initialized = true;
+		}
+	}
+	
+	public LaserLevel() {
 		settingsDialog = new BeanDialog(this, "Preferences", settings);
 		
 		JMenuBar menuBar = new JMenuBar();
 		JMenu menu = new JMenu("Options");
 		
-		JMenuItem item = new JMenuItem("Preferences");
-		item.addActionListener((e) -> {
+		JMenuItem cams = new JMenuItem("Select camera");
+		cams.addActionListener((e) -> {
+			selectCam();
+		});
+		
+		JMenuItem prefs = new JMenuItem("Preferences");
+		prefs.addActionListener((e) -> {
 			settingsDialog.setVisible(true);
 		});
 		
-		menu.add(item);
+		menu.add(cams);
+		menu.add(prefs);
 		menuBar.add(menu);
 		this.setJMenuBar(menuBar);
 		
 	}
 
-
+	public void selectCam() {
+		String [] camNames = null;
+		while ((camNames = SaxosCamera.listCams()).length==0) {
+			JOptionPane.showMessageDialog(this, "Please attach a webcam", "No cam found", JOptionPane.WARNING_MESSAGE);
+		}
+		
+		
+		String chosenCam = null;
+		
+		if (camNames.length>1) {
+		
+			while ((chosenCam = (String)JOptionPane.showInputDialog(this, "Select a camera", "Camera", JOptionPane.PLAIN_MESSAGE, null, camNames, camNames[0]))==null) {}
+		} else {
+			chosenCam = camNames[0];
+		}
+		
+		init(chosenCam);
+	}
+	
 	public void updateLevel() {
-		frame = analyser.analyzeNextFrame();
-		repaint();
+		synchronized(initMutex) {
+			if (initialized) {
+				frame = analyser.analyzeNextFrame();
+				repaint();
+			}
+		}
 	}
 
 	private class MeasurementPanel extends JPanel {
@@ -155,11 +199,19 @@ public class LaserLevel extends JFrame {
 
 
 	public static void main(String [] args) throws Exception {
+		// UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
+		 for (LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
+		        if ("Nimbus".equals(info.getName())) {
+		            UIManager.setLookAndFeel(info.getClassName());
+		            break;
+		        }
+		    }
 		LaserLevel m = new LaserLevel();
 		m.setSize(1920, 1024);
 		m.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		m.setVisible(true);
-
+		m.selectCam();
+		
 		while (true) {
 			m.updateLevel();
 			try {

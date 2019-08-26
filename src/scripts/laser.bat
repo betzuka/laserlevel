@@ -1,0 +1,1 @@
+java -jar laserlevel-1.0-SNAPSHOT-shaded.jar

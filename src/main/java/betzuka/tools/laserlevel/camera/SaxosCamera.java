@@ -4,8 +4,12 @@ import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.github.sarxos.webcam.Webcam;
+import com.github.sarxos.webcam.WebcamDiscoveryEvent;
+import com.github.sarxos.webcam.WebcamDiscoveryListener;
 
 import betzuka.tools.laserlevel.Camera;
 import betzuka.tools.laserlevel.Settings;
@@ -15,13 +19,27 @@ public class SaxosCamera implements Camera {
 	
 	private Webcam cam;
 	
-	public SaxosCamera(Settings settings) {
+	public SaxosCamera(String camName, Settings settings) {
 		this.settings = settings;
-		cam = Webcam.getDefault();
+		cam = Webcam.getWebcamByName(camName);
 		cam.setViewSize(new Dimension(settings.getFrameWidth(), settings.getFrameHeight()));
 		cam.open();
 	}
 
+	public void dispose() {
+		cam.close();
+	}
+	
+	public static String [] listCams() {
+		List<Webcam> cams = Webcam.getWebcams();
+		String [] names = new String[cams.size()];
+		for (int i=0;i<names.length;i++) {
+			names[i] = cams.get(i).getName();
+		}
+		return names;
+	}
+	
+	
 	@Override
 	public BufferedImage nextFrame() {
 		BufferedImage raw = cam.getImage();
