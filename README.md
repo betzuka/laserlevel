@@ -25,10 +25,10 @@ Clone this repository then build with maven.
 
 `mvn package`
 
-You may have to run this twice. Note that it will download the colossal OpenCV package then repackage everything into a single jar which will be about 100Mb. I will endeavour to remove the OpenCV dependency as it is only used to read the webcam.
-
 ## Running
 
 First connect your webcam. Then find the jar file just built (it will be in the `target` directory). Run:
 
-`java -cp laserlevel-1.0-SNAPSHOT.jar betzuka.tools.laserlevel.LaserLevel`
+`java -jar laserlevel-1.0-SNAPSHOT-shaded.jar betzuka.tools.laserlevel.LaserLevel`
+
+Or use the zip that will have been generated into the `builds` directory as per instructions above for pre-built binary.
