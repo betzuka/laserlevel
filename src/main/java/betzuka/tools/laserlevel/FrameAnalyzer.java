@@ -2,11 +2,14 @@ package betzuka.tools.laserlevel;
 
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.apache.commons.math3.fitting.GaussianCurveFitter;
 import org.apache.commons.math3.fitting.WeightedObservedPoints;
 
 public class FrameAnalyzer {
+	private Set<FrameListener> listeners = new HashSet<FrameListener>();
 	private Camera cam;
 //	private Mat mat;
 	private int width, height;
@@ -19,6 +22,25 @@ public class FrameAnalyzer {
 		this.width = firstFrame.getWidth();
 		this.height = firstFrame.getHeight();
 		
+	}
+	
+	public void addListener(FrameListener l) {
+		listeners.add(l);
+	}
+	
+	private void notifyListeners(AnalyzedFrame frame) {
+		Set<FrameListener> toRemove = null;
+		for (FrameListener l : listeners) {
+			if (l.onFrame(frame)) {
+				if (toRemove==null) {
+					toRemove = new HashSet<FrameListener>();
+				}
+				toRemove.add(l);
+			}
+		}
+		if (toRemove!=null) {
+			listeners.removeAll(toRemove);
+		}
 	}
 	
 	public void dispose() {
@@ -42,7 +64,9 @@ public class FrameAnalyzer {
 		
 		double [] gaussianFit = fitGausian(intensityCurve);
 		
-		return new AnalyzedFrame(img.getWidth(), img.getHeight(), intensityCurve, gaussianFit, img);
+		AnalyzedFrame frame = new AnalyzedFrame(img.getWidth(), img.getHeight(), intensityCurve, gaussianFit, img);
+		notifyListeners(frame);
+		return frame;
 	}
 			
 
