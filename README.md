@@ -15,7 +15,10 @@ The screenshot is of the sensor block zero'd (blue line) then raised by placing 
 ![Sensor](/doc/imgs/sensor_block_1.jpg?raw=true)
 
 ## Dependencies
-Project depends on Apache Math 3.6.2 for fitting gaussians and OpenCV for interfacing to the webcam.
+Project depends on Apache Math 3.6.2 for fitting gaussians and Saxos for interfacing to the webcam.
+
+## Pre-built binary
+[Download and extract this zip file](/build/laser.zip) then run `laser.bat`. You will need java installed.
 
 ## Build
 Clone this repository then build with maven.
