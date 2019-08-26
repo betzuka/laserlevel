@@ -1,11 +1,15 @@
 package betzuka.tools.laserlevel;
 
+import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.beans.BeanInfo;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.List;
 
 import javax.swing.JDialog;
 import javax.swing.JFrame;
@@ -25,7 +29,8 @@ public class BeanDialog extends JDialog {
 		
 		try {
 			JPanel beanPanel = new JPanel();
-			beanPanel.add(createTable(bean));
+			beanPanel.setLayout(new BorderLayout());
+			beanPanel.add(createTable(bean), BorderLayout.CENTER);
 			getContentPane().add(beanPanel);
 			setDefaultCloseOperation(HIDE_ON_CLOSE);
 			setPreferredSize(new Dimension(500,500));;
@@ -40,9 +45,15 @@ public class BeanDialog extends JDialog {
 		
 		BeanInfo info = Introspector.getBeanInfo(bean.getClass());
 		
-		PropertyDescriptor [] props = info.getPropertyDescriptors();
 		
-		Arrays.sort(props, new Comparator<PropertyDescriptor>() {
+		List<PropertyDescriptor> props = new ArrayList<>();
+		for (PropertyDescriptor prop : info.getPropertyDescriptors()) {
+			if (prop.getWriteMethod()!=null && prop.getReadMethod()!=null) {
+				props.add(prop);
+			}
+		}
+		
+		Collections.sort(props, new Comparator<PropertyDescriptor>() {
 			@Override
 			public int compare(PropertyDescriptor o1, PropertyDescriptor o2) {
 				return o1.getName().compareTo(o2.getName());
@@ -52,8 +63,7 @@ public class BeanDialog extends JDialog {
 		
 		TableModel model = new AbstractTableModel() {
 			
-						
-			@Override
+						@Override
 			public boolean isCellEditable(int rowIndex, int columnIndex) {
 				return columnIndex==1;
 			}
@@ -62,8 +72,7 @@ public class BeanDialog extends JDialog {
 			public void setValueAt(Object aValue, int rowIndex, int columnIndex) {
 				if (columnIndex==1) {
 					try {
-						System.out.println(aValue.getClass() + " " + props[rowIndex].getPropertyType());
-						props[rowIndex].getWriteMethod().invoke(bean, aValue);
+						props.get(rowIndex).getWriteMethod().invoke(bean, aValue);
 					} catch (Exception e) {
 						throw new RuntimeException(e);
 					}
@@ -73,10 +82,10 @@ public class BeanDialog extends JDialog {
 			@Override
 			public Object getValueAt(int rowIndex, int columnIndex) {
 				if (columnIndex==0) {
-					return props[rowIndex].getName();
+					return props.get(rowIndex).getName();
 				} else {
 					try {
-						return props[rowIndex].getReadMethod().invoke(bean);
+						return props.get(rowIndex).getReadMethod().invoke(bean);
 					} catch (Exception e) {
 						return new RuntimeException(e);
 					}
@@ -85,7 +94,7 @@ public class BeanDialog extends JDialog {
 			
 			@Override
 			public int getRowCount() {
-				return props.length;
+				return props.size();
 			}
 			
 			@Override
@@ -102,7 +111,7 @@ public class BeanDialog extends JDialog {
             public TableCellRenderer getCellRenderer(int row, int column) {
 				editClass = null;
                 if (column == 1) {
-                    return getDefaultRenderer(ClassUtils.primitiveToWrapper(props[row].getPropertyType()));
+                    return getDefaultRenderer(ClassUtils.primitiveToWrapper(props.get(row).getPropertyType()));
                 } else {
                     return super.getCellRenderer(row, column);
                 }
@@ -113,7 +122,7 @@ public class BeanDialog extends JDialog {
 				if (column==0) {
 					return super.getCellEditor(row, column);
 				} 
-				editClass = ClassUtils.primitiveToWrapper(props[row].getPropertyType());
+				editClass = ClassUtils.primitiveToWrapper(props.get(row).getPropertyType());
 				return getDefaultEditor(editClass);
 			}
 			@Override
@@ -122,6 +131,8 @@ public class BeanDialog extends JDialog {
             }
 			
 		};
+		
+		t.setShowGrid(true);
 		return t;
 		
 	}

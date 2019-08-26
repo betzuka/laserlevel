@@ -35,17 +35,11 @@ public class Settings {
 		return frameWidth;
 	}
 
-	public void setFrameWidth(int frameWidth) {
-		this.frameWidth = frameWidth;
-	}
+
 
 	public int getFrameHeight() {
 		return frameHeight;
 	}
 
-	public void setFrameHeight(int frameHeight) {
-		this.frameHeight = frameHeight;
-	}
-	
-	
+
 }
