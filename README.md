@@ -12,6 +12,7 @@ This is a very early work in progress, screenshot is working off a standard Dewa
 The screenshot is of the sensor block zero'd (blue line) then raised by placing it on a piece of copy paper, showing a reading of ~29 pixels at the new gaussian beam centre (red line). The paper is ~80 microns thick so it is resolving to ~3 microns or 1 ten-thousandth of an inch if you are that way inclined, pretty good for £7.
 
 ![Screenshot](/doc/imgs/screen_shot_1.png?raw=true)
+![Screenshot](/doc/imgs/screen_shot_3.png?raw=true)
 ![Sensor](/doc/imgs/sensor_block_1.jpg?raw=true)
 
 ## Dependencies
@@ -25,8 +26,8 @@ Clone this repository then build with maven.
 
 `mvn package`
 
-Find the jar file just built (it will be in the `target` directory). Run:
+Find the executable uber jar file just built (it will be in the `target` directory). Run:
 
-`java -jar laserlevel-1.0-SNAPSHOT-shaded.jar betzuka.tools.laserlevel.LaserLevel`
+`java -jar laserlevel-1.0-SNAPSHOT-shaded.jar`
 
 Or use the zip that will have been generated into the `builds` directory as per instructions above for pre-built binary.
