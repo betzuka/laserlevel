@@ -1,18 +1,24 @@
 package betzuka.tools.laserlevel;
 
+import java.awt.BasicStroke;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.GridLayout;
 import java.awt.Toolkit;
 import java.awt.datatransfer.StringSelection;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
 
 import javax.swing.BorderFactory;
+import javax.swing.BoxLayout;
+import javax.swing.ButtonGroup;
 import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
@@ -22,12 +28,24 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
+import javax.swing.JSplitPane;
 import javax.swing.JTable;
+import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.UIManager.LookAndFeelInfo;
 import javax.swing.border.EtchedBorder;
 import javax.swing.table.AbstractTableModel;
+
+import org.apache.commons.math3.analysis.interpolation.AkimaSplineInterpolator;
+import org.apache.commons.math3.analysis.interpolation.SplineInterpolator;
+import org.apache.commons.math3.analysis.polynomials.PolynomialSplineFunction;
+import org.knowm.xchart.XChartPanel;
+import org.knowm.xchart.XYChart;
+import org.knowm.xchart.XYChartBuilder;
+import org.knowm.xchart.XYSeries;
+import org.knowm.xchart.style.markers.SeriesMarkers;
 
 import betzuka.tools.laserlevel.camera.SaxosCamera;
 
@@ -42,6 +60,7 @@ public class LaserLevel extends JFrame implements FrameListener {
 	private JDialog settingsDialog;
 	private boolean initialized = false;
 	private Object initMutex = new Object();
+	private LinearMeasurement linear = new LinearMeasurement();
 	
 	private static class Measurement {
 		private Double zero;
@@ -81,20 +100,37 @@ public class LaserLevel extends JFrame implements FrameListener {
 	
 			setLayout(new BorderLayout());
 			Dimension dim = new Dimension(analyser.getWidth(), analyser.getHeight());
-			JPanel content = new JPanel(new FlowLayout());
+			Dimension minDim =  new Dimension(analyser.getWidth()/5, analyser.getHeight()/5);
+			JPanel videos = new JPanel(new GridLayout(1, 0));
 			JPanel curvePanel = new CurvePanel();
+			//curvePanel.setMaximumSize(dim);
+		//	curvePanel.setMinimumSize(minDim);
 			curvePanel.setPreferredSize(dim);
 			JPanel vidPanel = new VidPanel();
 			vidPanel.setPreferredSize(dim);
-			content.add(vidPanel);
-			content.add(curvePanel);
+		//	vidPanel.setMaximumSize(dim);
+			//vidPanel.setMinimumSize(minDim);
+			videos.add(vidPanel);
+			videos.add(curvePanel);
+			//videos.setMaximumSize(new Dimension(analyser.getWidth()*2, analyser.getHeight()));
+			//JPanel content = new JPanel();
+		//	content.setLayout(new BoxLayout(content, BoxLayout.LINE_AXIS));
+			
+			
 			
 			MeasurementPanel measurementPanel = new MeasurementPanel();
-			measurementPanel.setPreferredSize(dim);
 			
-			content.add(measurementPanel);
+			JSplitPane split = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
 			
-			add(content, BorderLayout.CENTER);
+			split.add(videos);
+			split.add(measurementPanel);
+		//	measurementPanel.setPreferredSize(dim);
+			
+			//content.add(measurementPanel);
+			//content.add(videos);
+			//content.add(measurementPanel);
+			add(split, BorderLayout.CENTER);
+			//add(chartPanel, BorderLayout.SOUTH);
 		
 			//add(new MeasurementPanel(), BorderLayout.SOUTH);
 			this.revalidate();
@@ -154,37 +190,118 @@ public class LaserLevel extends JFrame implements FrameListener {
 	}
 	
 
+	private class ChartPanel extends JPanel {
+		
+		private XYChart chart;
+		private XChartPanel<XYChart> chartPanel;
+		private boolean absolute = true;
+		private ChartPanel() {
+			setLayout(new BorderLayout());
+			chart = new XYChartBuilder().width(400).height(150).build();
+			chart.getStyler().setLegendVisible(false);
+			chartPanel = new XChartPanel<>(chart);
+			add(chartPanel, BorderLayout.CENTER);
+			
+			JRadioButton abs = new JRadioButton("Absolute");
+			abs.setSelected(true);
+			JRadioButton residual = new JRadioButton("Residual");
+			ButtonGroup grp = new ButtonGroup();
+			grp.add(abs);
+			grp.add(residual);
+			JPanel grpPanel = new JPanel();
+			grpPanel.add(abs);
+			grpPanel.add(residual);
+			add(grpPanel, BorderLayout.SOUTH);
+			
+			ActionListener listener = (e) -> {
+				absolute = e.getActionCommand().equals("Absolute");
+				updateSeries();
+			};
+			
+			abs.addActionListener(listener);;
+			residual.addActionListener(listener);
+			
+		}
+		
+		private void updateSeries() {
+			chart.removeSeries("Measurements");
+			chart.removeSeries("LinearFit");
+			chart.removeSeries("Residuals");
+			chart.removeSeries("Zero");
+			if (!linear.isEmpty()) {
+				List<LinearMeasurement.Sample> samples = linear.getSamples();
+				double [] x = new double[samples.size()];
+				double [] y = new double[samples.size()];
+				double [] linY = new double[samples.size()];
+				double [] linYError = new double[samples.size()];
+				
+				for (int i=0;i<samples.size();i++) {
+					LinearMeasurement.Sample s = samples.get(i);
+					x[i] = s.getX();
+					y[i] = s.getY();
+					linY[i] = s.getLinY();
+					linYError[i] = s.getLinYError();
+				}
+				
+				
+				
+				
+				if (absolute) {
+					double [][] interpolation = Utils.interpolateCurve(chart.getWidth(), x, y);
+					chart.addSeries("LinearFit", x, linY).setMarker(SeriesMarkers.NONE).setLineColor(Color.BLUE);
+					chart.addSeries("Measurements", interpolation[0], interpolation[1]).setMarker(SeriesMarkers.NONE).setLineColor(Color.RED);
+				} else {
+					//draw a line at zero
+					chart.addSeries("Zero", new double [] {x[0], x[x.length-1]}, new double [] {0,0}).setMarker(SeriesMarkers.NONE).setLineColor(Color.BLUE);
+					double [][] residuals = Utils.interpolateCurve(chart.getWidth(), x, linYError);
+					chart.addSeries("Residuals", residuals[0], residuals[1]).setMarker(SeriesMarkers.NONE).setLineColor(Color.RED);
+				}
+								
+				chartPanel.repaint();
+			}
+		}
+		
+	}
 
 	private class MeasurementPanel extends JPanel {
 		private JLabel error;
-		private List<String> measurements = new ArrayList<String>();
+		private ChartPanel chartPanel;
 		
 		private MeasurementPanel() {
 		//	setLayout(new GridLayout(2, 1));
+	//		setLayout(new BorderLayout());
 			
 			setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "Measure"));
-			
+			String [] colNames = {"X", "Measured", "Residual", "Scrape", "Shim"};
 			
 			AbstractTableModel model = new AbstractTableModel() {
-				private String [] colNames = {"Num", "Measurement"};
+				
+				
+				private String formatValue(double v) {
+					return String.format("%.4f", v);
+				}
 				
 				@Override
 				public int getRowCount() {
-					return measurements.size();
+					return linear.getSamples().size();
 				}
 
 				@Override
 				public int getColumnCount() {
-					return 2;
+					return 5;
 				}
 
 				@Override
 				public Object getValueAt(int rowIndex, int columnIndex) {
-					if (columnIndex==0) {
-						return rowIndex + 1;
-					} else {
-						return measurements.get(rowIndex);
+					LinearMeasurement.Sample sample = linear.getSamples().get(rowIndex);
+					switch(columnIndex) {
+					case 0: return formatValue(sample.getX());
+					case 1: return formatValue(sample.getY());
+					case 2: return formatValue(sample.getLinYError());
+					case 3: return formatValue(sample.getScrape());
+					case 4: return formatValue(sample.getShim());
 					}
+					return null;
 				}
 
 				@Override
@@ -209,7 +326,7 @@ public class LaserLevel extends JFrame implements FrameListener {
 				public void actionPerformed(ActionEvent e) {
 					if (frame!=null) {
 						//make sure we really want to do this
-						if (measurements.isEmpty() ||  JOptionPane.YES_OPTION==JOptionPane.showConfirmDialog(LaserLevel.this, "Re-zero ? Are you sure, all measurements will be lost!", "Warning", JOptionPane.OK_CANCEL_OPTION)) {
+						if (linear.isEmpty() ||  JOptionPane.YES_OPTION==JOptionPane.showConfirmDialog(LaserLevel.this, "Re-zero ? Are you sure, all measurements will be lost!", "Warning", JOptionPane.OK_CANCEL_OPTION)) {
 							zeroButton.setEnabled(false);
 							analyser.addListener(new SampleAverager(settings.getSamplesToAverage(), new SampleAverager.Tracker() {
 								@Override
@@ -220,8 +337,9 @@ public class LaserLevel extends JFrame implements FrameListener {
 								
 								@Override
 								public void onComplete(double avg) {
+									
 									measurement.setZero(avg);
-									measurements.clear();
+									linear.clear();
 									progress.setText("");
 									zeroButton.setEnabled(true);
 									model.fireTableDataChanged();
@@ -254,11 +372,13 @@ public class LaserLevel extends JFrame implements FrameListener {
 							
 							@Override
 							public void onComplete(double avg) {
-								measurements.add(String.format("%.4f", pixelToUM(avg-measurement.getZero())));
+								SwingUtilities.invokeLater(() -> {
+								linear.add(pixelToUM(avg-measurement.getZero()));
 								progress.setText("");
 								measure.setEnabled(true);
 								model.fireTableDataChanged();
-								
+								chartPanel.updateSeries();
+								});
 							}
 						}));
 					}
@@ -266,13 +386,16 @@ public class LaserLevel extends JFrame implements FrameListener {
 				}
 			});
 			
+			
+			
 			JButton clear = new JButton("Clear");
 			clear.addActionListener(new ActionListener() {
 				@Override
 				public void actionPerformed(ActionEvent e) {
-					if (!measurements.isEmpty() && JOptionPane.YES_OPTION==JOptionPane.showConfirmDialog(LaserLevel.this, "Are you sure, all measurements will be lost!", "Warning", JOptionPane.OK_CANCEL_OPTION)) {
-						measurements.clear();
+					if (!linear.isEmpty() && JOptionPane.YES_OPTION==JOptionPane.showConfirmDialog(LaserLevel.this, "Are you sure, all measurements will be lost!", "Warning", JOptionPane.OK_CANCEL_OPTION)) {
+						linear.clear();
 						model.fireTableDataChanged();
+						chartPanel.updateSeries();
 					}
 				}
 			});
@@ -282,16 +405,8 @@ public class LaserLevel extends JFrame implements FrameListener {
 			copyToClip.addActionListener(new ActionListener() {
 				@Override
 				public void actionPerformed(ActionEvent e) {
-					if (!measurements.isEmpty()) {
-						StringBuilder sb = new StringBuilder();
-						sb.append("Num\tMeasurement\n");
-						for (int i=0;i<measurements.size();i++) {
-							sb.append(i+1);
-							sb.append("\t");
-							sb.append(measurements.get(i));
-							sb.append("\n");
-						}
-						Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(sb.toString()), null);
+					if (!linear.isEmpty()) {
+						Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(linear.toString()), null);
 					}
 				}
 			});
@@ -301,22 +416,39 @@ public class LaserLevel extends JFrame implements FrameListener {
 			error.setFont(error.getFont().deriveFont(24f));
 			error.setPreferredSize(new Dimension(150, (int)error.getPreferredSize().getHeight()));
 			
-			setLayout(new BorderLayout());
+			
+			JPanel top = new JPanel();
+			top.setLayout(new BoxLayout(top, BoxLayout.PAGE_AXIS));
 			
 			JPanel north = new JPanel();
 			north.add(error);
 			north.add(zeroButton);
 			north.add(measure);
 			north.add(progress);
-			add(north, BorderLayout.NORTH);
+			//add(north, BorderLayout.NORTH);
+			top.add(north);
 			
-			add(tablePane, BorderLayout.CENTER);
+			//add(tablePane, BorderLayout.CENTER);
+			top.add(tablePane);
 			
 			JPanel south = new JPanel();
 			south.add(clear);
 			south.add(copyToClip);
 			
-			add(south, BorderLayout.SOUTH);
+			top.add(south);
+			
+			chartPanel = new ChartPanel();
+			
+			JSplitPane split = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
+			
+			split.add(top);
+			split.add(chartPanel);
+			
+			//south.add(chartPanel);
+			//add(chartPanel);
+			setLayout(new BorderLayout());
+			add(split, BorderLayout.CENTER);
+			//add(south, BorderLayout.SOUTH);
 		}
 
 		private Double takeMeasurementNow() {
@@ -343,7 +475,7 @@ public class LaserLevel extends JFrame implements FrameListener {
 	    public void paintComponent(Graphics g) {
 			super.paintComponent(g);
 			if (frame!=null) {
-				g.drawImage(frame.getImg(), 0, 0, null);
+				g.drawImage(frame.getImg(), 0, 0, getWidth(), getHeight(), null);
 			}
 		}
 	}
@@ -352,22 +484,36 @@ public class LaserLevel extends JFrame implements FrameListener {
 		@Override
 	    public void paintComponent(Graphics g) {
 			super.paintComponent(g);
+			
+			
+			
+			
+			
 			g.setColor(Color.BLACK);
 			g.fillRect(0, 0, getWidth(), getHeight());
 			if (frame!=null) {
-				g.setColor(Color.GREEN);
+				//create a new image to draw on
+				BufferedImage buf = new BufferedImage(analyser.getWidth(), analyser.getHeight(), BufferedImage.TYPE_INT_RGB);
+				
+				Graphics2D bg = buf.createGraphics();
+				bg.setColor(Color.BLACK);
+				bg.fillRect(0, 0, buf.getWidth(), buf.getHeight());
+				bg.setColor(Color.GREEN);
 				double [] curve = frame.getIntensityCurve();
 				for (int i=0;i<curve.length;i++) {
-					g.drawLine(0, i, (int) Math.round(curve[i]*getWidth()), i);
+					bg.drawLine(0, i, (int) Math.round(curve[i]*buf.getWidth()), i);
 				}
+				g.drawImage(buf, 0, 0, getWidth(), getHeight(), null);
+				
+				bg.dispose();
 				if (frame.hasFit()) {
 					g.setColor(Color.RED);
-					int maxAt = (int)Math.round(frame.getMaxima());
+					int maxAt = (int)Math.round(frame.getMaxima()/(double)analyser.getHeight() * getHeight());
 					g.drawLine(0, maxAt, getWidth(), maxAt);
 				}
 				if (measurement.getZero()!=null) {
 					g.setColor(Color.BLUE);
-					int maxAt = (int)Math.round(measurement.getZero());
+					int maxAt = (int)Math.round(measurement.getZero()/(double)analyser.getHeight() * getHeight());
 					g.drawLine(0, maxAt, getWidth(), maxAt);
 				}
 			}
@@ -384,11 +530,11 @@ public class LaserLevel extends JFrame implements FrameListener {
 		        }
 		    }
 		LaserLevel m = new LaserLevel();
-		m.setSize(1920, 1024);
+		m.setSize(1024, 768);
 		m.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		m.setVisible(true);
 		m.selectCam();
-		
+		m.pack();
 		while (true) {
 			m.updateAnalyser();
 			try {
