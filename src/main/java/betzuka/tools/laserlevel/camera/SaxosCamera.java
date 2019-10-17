@@ -10,6 +10,7 @@ import java.util.List;
 import com.github.sarxos.webcam.Webcam;
 import com.github.sarxos.webcam.WebcamDiscoveryEvent;
 import com.github.sarxos.webcam.WebcamDiscoveryListener;
+import com.github.sarxos.webcam.WebcamResolution;
 
 import betzuka.tools.laserlevel.Camera;
 import betzuka.tools.laserlevel.Settings;
@@ -21,7 +22,17 @@ public class SaxosCamera implements Camera {
 	
 	public SaxosCamera(String camName, Settings settings) {
 		this.settings = settings;
+		
+		Dimension[] nonStandardResolutions = new Dimension[] {
+			WebcamResolution.PAL.getSize(),
+			WebcamResolution.HD.getSize(),
+			new Dimension(1920, 1080),
+			new Dimension(1280, 720),
+			new Dimension(800,600),
+		};
+		
 		cam = Webcam.getWebcamByName(camName);
+		cam.setCustomViewSizes(nonStandardResolutions);
 		cam.setViewSize(new Dimension(settings.getFrameWidth(), settings.getFrameHeight()));
 		cam.open();
 	}
