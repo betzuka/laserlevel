@@ -5,7 +5,6 @@ public class Settings {
 	private boolean invertGreyscale;
 	private double umPerPixel = 1;
 	private int smoothingFactor = 1;
-	private int frameWidth = 640, frameHeight = 480;
 	private int samplesToAverage = 10;
 	
 	public boolean isInvertGreyscale() {
@@ -32,15 +31,6 @@ public class Settings {
 		this.smoothingFactor = smoothingFactor;
 	}
 
-	public int getFrameWidth() {
-		return frameWidth;
-	}
-
-
-
-	public int getFrameHeight() {
-		return frameHeight;
-	}
 
 	public int getSamplesToAverage() {
 		return samplesToAverage;

@@ -22,7 +22,16 @@ public class SaxosCamera implements Camera {
 	public SaxosCamera(String camName, Settings settings) {
 		this.settings = settings;
 		cam = Webcam.getWebcamByName(camName);
-		cam.setViewSize(new Dimension(settings.getFrameWidth(), settings.getFrameHeight()));
+		
+		Dimension maxDim = null;
+		
+		for (Dimension d : cam.getViewSizes()) {
+			if (maxDim==null || maxDim.getWidth() < d.getWidth()) {
+				maxDim = d;
+			}
+		}
+		cam.setViewSize(maxDim);
+		System.out.println("Max camera resolution selected " + maxDim);
 		cam.open();
 	}
 
