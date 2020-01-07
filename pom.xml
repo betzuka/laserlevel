@@ -41,7 +41,11 @@
         <artifactId>xchart</artifactId>
         <version>3.5.4</version>
     </dependency>
-    
+    <dependency>
+    <groupId>net.java.dev.designgridlayout</groupId>
+    <artifactId>designgridlayout</artifactId>
+    <version>1.11</version>
+</dependency>
 	</dependencies>
 
 

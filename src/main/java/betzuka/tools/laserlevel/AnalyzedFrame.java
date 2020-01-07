@@ -4,13 +4,13 @@ import java.awt.image.BufferedImage;
 
 public class AnalyzedFrame {
 	private final double [] intensityCurve;
-	private final double [] gaussianFit;
+	private final double maxima;
 	private final BufferedImage img;
 	private final int width, height;
 	
-	public AnalyzedFrame(int width, int height, double[] intensityCurve, double[] gaussianFit, BufferedImage img) {
+	public AnalyzedFrame(int width, int height, double[] intensityCurve, double maxima, BufferedImage img) {
 		this.intensityCurve = intensityCurve;
-		this.gaussianFit = gaussianFit;
+		this.maxima = maxima;
 		this.img = img;
 		this.width = width;
 		this.height = height;
@@ -18,9 +18,6 @@ public class AnalyzedFrame {
 	
 	public double[] getIntensityCurve() {
 		return intensityCurve;
-	}
-	public double[] getGaussianFit() {
-		return gaussianFit;
 	}
 	public BufferedImage getImg() {
 		return img;
@@ -35,13 +32,13 @@ public class AnalyzedFrame {
 	}
 	
 	public boolean hasFit() {
-		return gaussianFit!=null;
+		return !Double.isNaN(maxima);
 	}
 	
 	public double getMaxima() {
 		if (!hasFit()) {
 			return Double.NaN;
 		}
-		return gaussianFit[1];
+		return maxima;
 	}
 }

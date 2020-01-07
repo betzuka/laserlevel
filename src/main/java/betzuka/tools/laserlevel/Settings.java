@@ -4,8 +4,9 @@ public class Settings {
 	
 	private boolean invertGreyscale;
 	private double umPerPixel = 1;
-	private int smoothingFactor = 1;
+	private int smoothingFactor = 20;
 	private int samplesToAverage = 10;
+	private int model = 4;
 	
 	public boolean isInvertGreyscale() {
 		return invertGreyscale;
@@ -38,6 +39,14 @@ public class Settings {
 
 	public void setSamplesToAverage(int samplesToAverage) {
 		this.samplesToAverage = samplesToAverage;
+	}
+
+	public int getModel() {
+		return model;
+	}
+
+	public void setModel(int model) {
+		this.model = model;
 	}
 
 

@@ -6,6 +6,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.commons.math3.fitting.GaussianCurveFitter;
+import org.apache.commons.math3.fitting.PolynomialCurveFitter;
 import org.apache.commons.math3.fitting.WeightedObservedPoints;
 
 public class FrameAnalyzer {
@@ -62,9 +63,9 @@ public class FrameAnalyzer {
 		byte [] pixels = ((DataBufferByte) img.getRaster().getDataBuffer()).getData();
 		double [] intensityCurve = calcCurve(img.getHeight(), img.getWidth() , pixels, settings.getSmoothingFactor(), settings.isInvertGreyscale());
 		
-		double [] gaussianFit = fitGausian(intensityCurve);
+		double maxima = findMaxima(intensityCurve);
 		
-		AnalyzedFrame frame = new AnalyzedFrame(img.getWidth(), img.getHeight(), intensityCurve, gaussianFit, img);
+		AnalyzedFrame frame = new AnalyzedFrame(img.getWidth(), img.getHeight(), intensityCurve, maxima, img);
 		notifyListeners(frame);
 		return frame;
 	}
@@ -111,7 +112,22 @@ public class FrameAnalyzer {
 		return smooth;
 	}
 	
-	private static double [] fitGausian(double [] curve) {
+	private double findMaxima(double [] curve) {
+		if (settings.getModel()==0) {
+			return fitGausian(curve);
+		} else if (settings.getModel()==1) {
+			return fitMaxLocalEnergy(curve);
+		} else if (settings.getModel()==2) {
+			return fitParabolic(curve);
+		} else if (settings.getModel()==3) {
+			return fitMaxLocalEnergyThenGaussian(curve);
+		} else if (settings.getModel()==4) {
+			return fitMaxLocalEnergyThenParabolic(curve);
+		}
+		throw new IllegalStateException();
+	}
+	
+	private static double fitGausian(double [] curve) {
 		try {
 			GaussianCurveFitter fitter = GaussianCurveFitter.create().withMaxIterations(1000);
 			WeightedObservedPoints pts = new WeightedObservedPoints();
@@ -119,11 +135,104 @@ public class FrameAnalyzer {
 				pts.add(i, curve[i]);
 			}
 			double [] fit = fitter.fit(pts.toList());
-			return fit;
+			return fit[1];
 		} catch (Exception e) {
 			//we will get an exception if we cannot fit a guassian within max iterations
 			//this occurs when the laser is not hitting the sensor
-			return null;
+			return Double.NaN;
 		}
 	}
+	
+	public static int fitMaxLocalEnergy(double [] curve) {
+		int window = 10;
+		double maxEnergy = Double.NEGATIVE_INFINITY;
+		int maxIdx = 0;
+		for (int i=window;i<curve.length-window;i++) {
+			double energy = 0;
+			for (int j=i-window;j<=i+window;j++) {
+				energy += curve[j];
+			}
+			if (energy>maxEnergy) {
+				maxEnergy = energy;
+				maxIdx = i;
+			}
+		}
+		return maxIdx;
+	}
+	
+	public static double fitParabolic(double [] curve) {
+		
+		try {
+			PolynomialCurveFitter fitter = PolynomialCurveFitter.create(2).withMaxIterations(1000);
+			WeightedObservedPoints pts = new WeightedObservedPoints();
+			for (int i=0;i<curve.length;i++) {
+				pts.add(i, curve[i]);
+			}
+			double [] fit = fitter.fit(pts.toList());
+			
+			//fit contains degree 2 polynomial (parabola) parameters in order of increasing degree, e.g. y = p0 + p1x + p2x^2
+			//derivative d/dx y = 0 + p1 + 2*p2x
+			//slope is zero at maxima
+			//p1 + 2*p2x = 0
+			//x = -p1 / (2*p2)
+			return -fit[1]/(2*fit[2]);
+			
+		} catch (Exception e) {
+			//we will get an exception if we cannot fit a guassian within max iterations
+			//this occurs when the laser is not hitting the sensor
+			return Double.NaN;
+		}
+		
+	}
+	
+	public static double fitMaxLocalEnergyThenParabolic(double [] curve) {
+		
+		int localMax = fitMaxLocalEnergy(curve);
+		
+		int window = 10;
+		
+		double [] subCurve = new double[window*2+1];
+		
+		int windowStart = localMax-window;
+		
+		for (int j=0;j<subCurve.length;j++) {
+			subCurve[j] = curve[j+windowStart];
+		}
+		
+		double fit = fitParabolic(subCurve);
+		
+		if (!Double.isNaN(fit)) {
+			fit += windowStart;
+		}
+		
+		return fit;
+		
+		
+	}
+	
+	public static double fitMaxLocalEnergyThenGaussian(double [] curve) {
+		
+		int localMax = fitMaxLocalEnergy(curve);
+		
+		int window = 10;
+		
+		double [] subCurve = new double[window*2+1];
+		
+		int windowStart = localMax-window;
+		
+		for (int j=0;j<subCurve.length;j++) {
+			subCurve[j] = curve[j+windowStart];
+		}
+		
+		double fit = fitGausian(subCurve);
+		
+		if (!Double.isNaN(fit)) {
+			fit += windowStart;
+		}
+		
+		return fit;
+		
+		
+	}
+	
 }

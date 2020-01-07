@@ -18,9 +18,10 @@ public class Utils {
 		
 		double range = maxX - minX;
 		double step = range/(double)(numPoints-1);
+				
 		for (int i=0;i<numPoints;i++) {
 			newX[i] = minX + i*step;
-			newY[i] = psi.value(newX[i]);
+			newY[i] = newX[i]<=maxX ? psi.value(newX[i]) : y[y.length-1];
 		}
 		return new double [][] {newX, newY};
 	}

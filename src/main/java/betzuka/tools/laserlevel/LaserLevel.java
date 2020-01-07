@@ -12,14 +12,17 @@ import java.awt.Toolkit;
 import java.awt.datatransfer.StringSelection;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.swing.AbstractAction;
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
 import javax.swing.JButton;
+import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -31,7 +34,9 @@ import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
+import javax.swing.JTabbedPane;
 import javax.swing.JTable;
+import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.UIManager.LookAndFeelInfo;
@@ -118,12 +123,18 @@ public class LaserLevel extends JFrame implements FrameListener {
 			
 			
 			
-			MeasurementPanel measurementPanel = new MeasurementPanel();
-			
 			JSplitPane split = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
 			
 			split.add(videos);
-			split.add(measurementPanel);
+			
+			JTabbedPane tabs = new JTabbedPane();
+			
+			MeasurementPanel measurementPanel = new MeasurementPanel();
+			tabs.addTab("Linear", measurementPanel);
+			
+			
+			
+			split.add(tabs);
 		//	measurementPanel.setPreferredSize(dim);
 			
 			//content.add(measurementPanel);
@@ -166,6 +177,7 @@ public class LaserLevel extends JFrame implements FrameListener {
 		menu.add(cams);
 		menu.add(prefs);
 		menuBar.add(menu);
+		
 		this.setJMenuBar(menuBar);
 		
 	}
@@ -358,7 +370,8 @@ public class LaserLevel extends JFrame implements FrameListener {
 			JButton measure = new JButton("Measure");
 			
 			progress.setPreferredSize(new Dimension(50, (int)progress.getPreferredSize().getHeight()));
-			measure.addActionListener(new ActionListener() {
+			
+			AbstractAction measureAction = new AbstractAction() {
 				@Override
 				public void actionPerformed(ActionEvent e) {
 					if (frame!=null && frame.hasFit() && measurement.getZero()!=null) {
@@ -382,12 +395,14 @@ public class LaserLevel extends JFrame implements FrameListener {
 							}
 						}));
 					}
-					
 				}
-			});
+			};
 			
+			measure.addActionListener(measureAction);
 			
-			
+			measure.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke(KeyEvent.VK_M, 0), "M");
+			measure.getActionMap().put("M", measureAction);
+						
 			JButton clear = new JButton("Clear");
 			clear.addActionListener(new ActionListener() {
 				@Override
