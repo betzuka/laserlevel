@@ -333,7 +333,8 @@ public class LaserLevel extends JFrame implements FrameListener {
 			JScrollPane tablePane = new JScrollPane(measurementsTable); 
 			JLabel progress = new JLabel(" ");
 			JButton zeroButton = new JButton("Zero");
-			zeroButton.addActionListener(new ActionListener() {
+			
+			AbstractAction zeroAction = new AbstractAction() {
 				@Override
 				public void actionPerformed(ActionEvent e) {
 					if (frame!=null) {
@@ -364,8 +365,12 @@ public class LaserLevel extends JFrame implements FrameListener {
 						measurement.setZero(null);
 					}
 				}
-			});
+			};
 			
+			zeroButton.addActionListener(zeroAction);
+			
+			zeroButton.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke(KeyEvent.VK_Z, 0), "Z");
+			zeroButton.getActionMap().put("Z", zeroAction);
 			
 			JButton measure = new JButton("Measure");
 			
