@@ -196,7 +196,11 @@ public class FrameAnalyzer {
 		int windowStart = localMax-window;
 		
 		for (int j=0;j<subCurve.length;j++) {
-			subCurve[j] = curve[j+windowStart];
+			int curveIdx = j+windowStart;
+			if (j<0 || j>=curve.length) {
+				return Double.NaN;
+			}
+			subCurve[j] = curve[curveIdx];
 		}
 		
 		double fit = fitParabolic(subCurve);
@@ -216,12 +220,19 @@ public class FrameAnalyzer {
 		
 		int window = 10;
 		
+	
+		
 		double [] subCurve = new double[window*2+1];
 		
 		int windowStart = localMax-window;
 		
+		
 		for (int j=0;j<subCurve.length;j++) {
-			subCurve[j] = curve[j+windowStart];
+			int curveIdx = j+windowStart;
+			if (j<0 || j>=curve.length) {
+				return Double.NaN;
+			}
+			subCurve[j] = curve[curveIdx];
 		}
 		
 		double fit = fitGausian(subCurve);
