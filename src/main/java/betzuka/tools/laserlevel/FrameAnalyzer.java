@@ -197,7 +197,7 @@ public class FrameAnalyzer {
 		
 		for (int j=0;j<subCurve.length;j++) {
 			int curveIdx = j+windowStart;
-			if (j<0 || j>=curve.length) {
+			if (curveIdx<0 || curveIdx>=curve.length) {
 				return Double.NaN;
 			}
 			subCurve[j] = curve[curveIdx];
@@ -229,7 +229,7 @@ public class FrameAnalyzer {
 		
 		for (int j=0;j<subCurve.length;j++) {
 			int curveIdx = j+windowStart;
-			if (j<0 || j>=curve.length) {
+			if (curveIdx<0 || curveIdx>=curve.length) {
 				return Double.NaN;
 			}
 			subCurve[j] = curve[curveIdx];
